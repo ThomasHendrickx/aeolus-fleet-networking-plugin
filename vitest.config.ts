@@ -2,10 +2,6 @@ import { fileURLToPath } from 'node:url';
 
 import { configDefaults, defineConfig, type TestProjectInlineConfiguration } from 'vitest/config';
 
-// Workspace packages resolve to their TypeScript source in tests, like in the
-// editor and in typecheck (see customConditions in tsconfig.base.json).
-const conditions = ['@aeolus-fleet/source', 'module', 'node', 'development|production'];
-
 /**
  * Core's Postgres global setup, by its file: vitest loads a global setup
  * outside the test environment, where a package export does not resolve.
@@ -36,9 +32,11 @@ function withGroupOrder(project: TestProjectInlineConfiguration): TestProjectInl
   return { ...project, test: { ...project.test, sequence: { ...project.test?.sequence, groupOrder } } };
 }
 
+// No @aeolus-fleet/source condition, unlike in tsconfig.base.json: the
+// published @aeolus-fleet/common lists it first and ships no src, so Node
+// would load its missing source under core's build. TypeScript falls through
+// to dist; Node does not. Nothing here imports this package by its name.
 export default defineConfig({
-  resolve: { conditions },
-  ssr: { resolve: { conditions } },
   test: {
     // Half the machine per run: the tests start servers and databases beside
     // their workers, and other runs share the machine.
